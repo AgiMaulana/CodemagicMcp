@@ -4,19 +4,54 @@ A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://do
 
 ## Tools
 
+### Apps
 | Tool | Description |
 |------|-------------|
 | `list_apps` | List all applications in your Codemagic account |
 | `get_app` | Get details of a specific application |
 | `add_app` | Add a public repository to Codemagic |
 | `add_private_app` | Add a private repository using an SSH key |
+| `delete_app` ⚠️ | Delete an application from Codemagic |
+
+### Builds
+| Tool | Description |
+|------|-------------|
+| `list_builds` | List builds, optionally filtered by app |
+| `get_build` | Get details and status of a specific build |
 | `trigger_build` | Trigger a new build for an application |
-| `cancel_build` | Cancel a running build |
+| `cancel_build` ⚠️ | Cancel a running build |
+| `get_build_logs` | Get the logs for a build |
+| `list_build_artifacts` | List all artifacts produced by a build |
+
+### Artifacts
+| Tool | Description |
+|------|-------------|
 | `get_artifact_url` | Get the download URL for a build artifact |
 | `create_artifact_public_url` | Create a time-limited public URL for an artifact |
+
+### Caches
+| Tool | Description |
+|------|-------------|
 | `list_caches` | List all build caches for an application |
-| `delete_all_caches` | Delete all build caches for an application |
-| `delete_cache` | Delete a specific build cache |
+| `delete_cache` ⚠️ | Delete a specific build cache |
+| `delete_all_caches` ⚠️ | Delete all build caches for an application |
+
+### Environment Variables
+| Tool | Description |
+|------|-------------|
+| `list_variables` | List all environment variables for an application |
+| `add_variable` | Add an environment variable to an application |
+| `update_variable` | Update an existing environment variable |
+| `delete_variable` ⚠️ | Delete an environment variable |
+
+### Webhooks
+| Tool | Description |
+|------|-------------|
+| `list_webhooks` | List all webhooks for an application |
+| `add_webhook` | Add a webhook to an application |
+| `delete_webhook` ⚠️ | Delete a webhook |
+
+> ⚠️ These tools are marked as destructive and will prompt for confirmation before executing.
 
 ## Installation
 
@@ -131,7 +166,9 @@ codemagic_mcp/
     ├── apps.py
     ├── builds.py
     ├── artifacts.py
-    └── caches.py
+    ├── caches.py
+    ├── variables.py
+    └── webhooks.py
 ```
 
 ## Adding New Tools

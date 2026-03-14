@@ -1,6 +1,7 @@
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from codemagic_mcp.client import CodemagicClient
 
@@ -31,6 +32,16 @@ def register(mcp: FastMCP) -> None:
         """
         async with CodemagicClient() as client:
             return await client.add_app(repository_url)
+
+    @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
+    async def delete_app(app_id: str) -> Any:
+        """Delete an application from Codemagic.
+
+        Args:
+            app_id: The Codemagic application ID.
+        """
+        async with CodemagicClient() as client:
+            return await client.delete_app(app_id)
 
     @mcp.tool()
     async def add_private_app(

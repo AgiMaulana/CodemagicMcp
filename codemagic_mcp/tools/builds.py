@@ -1,11 +1,22 @@
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from codemagic_mcp.client import CodemagicClient
 
 
 def register(mcp: FastMCP) -> None:
+    @mcp.tool()
+    async def list_builds(app_id: str | None = None) -> Any:
+        """List Codemagic builds, optionally filtered by app.
+
+        Args:
+            app_id: Optional app ID to filter builds. If omitted, returns builds across all apps.
+        """
+        async with CodemagicClient() as client:
+            return await client.list_builds(app_id=app_id)
+
     @mcp.tool()
     async def get_build(build_id: str) -> Any:
         """Get details and status of a specific Codemagic build.
@@ -45,7 +56,7 @@ def register(mcp: FastMCP) -> None:
                 instance_type=instance_type,
             )
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
     async def cancel_build(build_id: str) -> Any:
         """Cancel a running Codemagic build.
 
@@ -54,3 +65,23 @@ def register(mcp: FastMCP) -> None:
         """
         async with CodemagicClient() as client:
             return await client.cancel_build(build_id)
+
+    @mcp.tool()
+    async def get_build_logs(build_id: str) -> Any:
+        """Get the logs for a Codemagic build.
+
+        Args:
+            build_id: The Codemagic build ID.
+        """
+        async with CodemagicClient() as client:
+            return await client.get_build_logs(build_id)
+
+    @mcp.tool()
+    async def list_build_artifacts(build_id: str) -> Any:
+        """List all artifacts produced by a Codemagic build.
+
+        Args:
+            build_id: The Codemagic build ID.
+        """
+        async with CodemagicClient() as client:
+            return await client.list_build_artifacts(build_id)

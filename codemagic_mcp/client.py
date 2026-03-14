@@ -29,6 +29,11 @@ class CodemagicClient:
         response.raise_for_status()
         return response.json()
 
+    async def _put(self, path: str, **kwargs: Any) -> Any:
+        response = await self._client.put(path, **kwargs)
+        response.raise_for_status()
+        return response.json()
+
     async def _delete(self, path: str, **kwargs: Any) -> Any:
         response = await self._client.delete(path, **kwargs)
         response.raise_for_status()
@@ -44,6 +49,9 @@ class CodemagicClient:
 
     async def add_app(self, repository_url: str) -> Any:
         return await self._post("/apps", json={"repositoryUrl": repository_url})
+
+    async def delete_app(self, app_id: str) -> Any:
+        return await self._delete(f"/apps/{app_id}")
 
     async def add_private_app(
         self,
@@ -66,6 +74,12 @@ class CodemagicClient:
         return await self._post("/apps/new", json=payload)
 
     # Builds
+
+    async def list_builds(self, app_id: str | None = None) -> Any:
+        params: dict[str, Any] = {}
+        if app_id is not None:
+            params["appId"] = app_id
+        return await self._get("/builds", params=params)
 
     async def get_build(self, build_id: str) -> Any:
         return await self._get(f"/builds/{build_id}")
@@ -96,6 +110,12 @@ class CodemagicClient:
     async def cancel_build(self, build_id: str) -> Any:
         return await self._post(f"/builds/{build_id}/cancel")
 
+    async def get_build_logs(self, build_id: str) -> Any:
+        return await self._get(f"/builds/{build_id}/log")
+
+    async def list_build_artifacts(self, build_id: str) -> Any:
+        return await self._get(f"/builds/{build_id}/artifacts")
+
     # Artifacts
 
     async def get_artifact_url(self, secure_filename: str) -> Any:
@@ -108,6 +128,55 @@ class CodemagicClient:
             f"/artifacts/{secure_filename}/public-url",
             json={"expiresAt": expires_at},
         )
+
+    # Variables
+
+    async def list_variables(self, app_id: str) -> Any:
+        return await self._get(f"/apps/{app_id}/variables")
+
+    async def add_variable(
+        self,
+        app_id: str,
+        key: str,
+        value: str,
+        group: str,
+        secure: bool = False,
+    ) -> Any:
+        return await self._post(
+            f"/apps/{app_id}/variables",
+            json={"key": key, "value": value, "group": group, "secure": secure},
+        )
+
+    async def update_variable(
+        self,
+        app_id: str,
+        variable_id: str,
+        key: str,
+        value: str,
+        group: str,
+        secure: bool = False,
+    ) -> Any:
+        return await self._put(
+            f"/apps/{app_id}/variables/{variable_id}",
+            json={"key": key, "value": value, "group": group, "secure": secure},
+        )
+
+    async def delete_variable(self, app_id: str, variable_id: str) -> Any:
+        return await self._delete(f"/apps/{app_id}/variables/{variable_id}")
+
+    # Webhooks
+
+    async def list_webhooks(self, app_id: str) -> Any:
+        return await self._get(f"/apps/{app_id}/webhooks")
+
+    async def add_webhook(self, app_id: str, url: str, events: list[str]) -> Any:
+        return await self._post(
+            f"/apps/{app_id}/webhooks",
+            json={"url": url, "events": events},
+        )
+
+    async def delete_webhook(self, app_id: str, webhook_id: str) -> Any:
+        return await self._delete(f"/apps/{app_id}/webhooks/{webhook_id}")
 
     # Caches
 

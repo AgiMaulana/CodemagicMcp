@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 
-from codemagic_mcp.tools import apps, artifacts, builds, caches
+from codemagic_mcp.tools import apps, artifacts, builds, caches, variables, webhooks
 
 
 def register_all_tools(mcp: FastMCP) -> None:
@@ -8,3 +8,5 @@ def register_all_tools(mcp: FastMCP) -> None:
     builds.register(mcp)
     artifacts.register(mcp)
     caches.register(mcp)
+    variables.register(mcp)
+    webhooks.register(mcp)

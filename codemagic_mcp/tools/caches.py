@@ -1,6 +1,7 @@
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from codemagic_mcp.client import CodemagicClient
 
@@ -16,7 +17,7 @@ def register(mcp: FastMCP) -> None:
         async with CodemagicClient() as client:
             return await client.list_caches(app_id)
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
     async def delete_all_caches(app_id: str) -> Any:
         """Delete all build caches for a Codemagic application.
 
@@ -26,7 +27,7 @@ def register(mcp: FastMCP) -> None:
         async with CodemagicClient() as client:
             return await client.delete_all_caches(app_id)
 
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(destructiveHint=True))
     async def delete_cache(app_id: str, cache_id: str) -> Any:
         """Delete a specific build cache for a Codemagic application.
 
