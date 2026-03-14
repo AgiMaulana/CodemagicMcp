@@ -67,6 +67,9 @@ class CodemagicClient:
 
     # Builds
 
+    async def get_build(self, build_id: str) -> Any:
+        return await self._get(f"/builds/{build_id}")
+
     async def trigger_build(
         self,
         app_id: str,
