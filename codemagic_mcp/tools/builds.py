@@ -7,6 +7,16 @@ from codemagic_mcp.client import CodemagicClient
 
 def register(mcp: FastMCP) -> None:
     @mcp.tool()
+    async def get_build(build_id: str) -> Any:
+        """Get details and status of a specific Codemagic build.
+
+        Args:
+            build_id: The Codemagic build ID.
+        """
+        async with CodemagicClient() as client:
+            return await client.get_build(build_id)
+
+    @mcp.tool()
     async def trigger_build(
         app_id: str,
         workflow_id: str,
