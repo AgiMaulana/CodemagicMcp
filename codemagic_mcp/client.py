@@ -7,6 +7,7 @@ from codemagic_mcp.config import settings
 
 class CodemagicClient:
     def __init__(self) -> None:
+        self.default_app_id: str | None = settings.codemagic_default_app_id
         self._client = httpx.AsyncClient(
             base_url=settings.codemagic_base_url,
             headers={"x-auth-token": settings.codemagic_api_key},
@@ -75,11 +76,50 @@ class CodemagicClient:
 
     # Builds
 
-    async def list_builds(self, app_id: str | None = None) -> Any:
+    async def list_builds(
+        self,
+        app_id: str | None = None,
+        branch: str | None = None,
+        tag: str | None = None,
+        limit: int = 10,
+        page: int = 1,
+    ) -> Any:
         params: dict[str, Any] = {}
         if app_id is not None:
             params["appId"] = app_id
-        return await self._get("/builds", params=params)
+        if branch is not None:
+            params["branch"] = branch
+        if tag is not None:
+            params["tag"] = tag
+        data = await self._get("/builds", params=params)
+        all_builds = data.get("builds", [])
+        total = len(all_builds)
+        start = (page - 1) * limit
+        end = start + limit
+        page_builds = all_builds[start:end]
+        return {
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "totalPages": (total + limit - 1) // limit if total > 0 else 1,
+            },
+            "builds": [
+                {
+                    "id": b.get("_id"),
+                    "status": b.get("status"),
+                    "branch": b.get("branch"),
+                    "tag": b.get("tag"),
+                    "workflowId": b.get("workflowId"),
+                    "workflowName": b.get("workflowName"),
+                    "appId": b.get("appId"),
+                    "createdAt": b.get("createdAt"),
+                    "startedAt": b.get("startedAt"),
+                    "finishedAt": b.get("finishedAt"),
+                }
+                for b in page_builds
+            ],
+        }
 
     async def get_build(self, build_id: str) -> Any:
         return await self._get(f"/builds/{build_id}")
@@ -114,7 +154,8 @@ class CodemagicClient:
         return await self._get(f"/builds/{build_id}/log")
 
     async def list_build_artifacts(self, build_id: str) -> Any:
-        return await self._get(f"/builds/{build_id}/artifacts")
+        build = await self._get(f"/builds/{build_id}")
+        return build.get("build", {}).get("artefacts", [])
 
     # Artifacts
 

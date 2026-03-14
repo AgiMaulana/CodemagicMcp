@@ -82,12 +82,23 @@ python3 -m venv .venv
 
 Get your API token from [Codemagic User Settings → Integrations → Codemagic API](https://codemagic.io/settings).
 
-You can provide it as an environment variable or via a `.env` file:
+You can provide settings as environment variables or via a `.env` file:
 
 ```bash
 # .env
 CODEMAGIC_API_KEY=your-api-key-here
+
+# Optional: set a default app so you don't have to specify it every time
+CODEMAGIC_DEFAULT_APP_ID=your-app-id-here
 ```
+
+### Default App ID
+
+`CODEMAGIC_DEFAULT_APP_ID` is optional but recommended if you work primarily with one app. When set, the AI will use it automatically whenever a tool requires an `app_id` and none was specified. If it is not set, the AI will:
+
+1. Call `list_apps` to discover available apps.
+2. Use the app automatically if only one exists.
+3. Present the list and ask you to choose if multiple apps are found.
 
 ## Register with Claude Code
 
@@ -111,7 +122,8 @@ Alternatively, add it manually to `~/.claude.json`:
     "codemagic": {
       "command": "codemagic-mcp",
       "env": {
-        "CODEMAGIC_API_KEY": "your-api-key-here"
+        "CODEMAGIC_API_KEY": "your-api-key-here",
+        "CODEMAGIC_DEFAULT_APP_ID": "your-app-id-here"
       }
     }
   }
@@ -127,7 +139,8 @@ Alternatively, add it manually to `~/.claude.json`:
       "command": "uvx",
       "args": ["codemagic-mcp"],
       "env": {
-        "CODEMAGIC_API_KEY": "your-api-key-here"
+        "CODEMAGIC_API_KEY": "your-api-key-here",
+        "CODEMAGIC_DEFAULT_APP_ID": "your-app-id-here"
       }
     }
   }
@@ -146,7 +159,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
     "codemagic": {
       "command": "codemagic-mcp",
       "env": {
-        "CODEMAGIC_API_KEY": "your-api-key-here"
+        "CODEMAGIC_API_KEY": "your-api-key-here",
+        "CODEMAGIC_DEFAULT_APP_ID": "your-app-id-here"
       }
     }
   }

@@ -15,7 +15,14 @@ mcp = FastMCP(
         "Variables: list_variables, add_variable, update_variable, delete_variable\n\n"
         "Webhooks: list_webhooks, add_webhook, delete_webhook\n\n"
         "Tools marked as destructive (delete_app, cancel_build, delete_cache, delete_all_caches, "
-        "delete_variable, delete_webhook) will prompt for confirmation before executing."
+        "delete_variable, delete_webhook) will prompt for confirmation before executing.\n\n"
+        "App ID resolution — when a tool requires an app_id, resolve it in this order:\n"
+        "1. Use the app_id explicitly provided by the user.\n"
+        "2. If not provided, check whether CODEMAGIC_DEFAULT_APP_ID is configured "
+        "(exposed as `default_app_id` on the client); use it silently if set.\n"
+        "3. If neither is available, call list_apps to retrieve the available apps. "
+        "If only one app exists, use it automatically. "
+        "If multiple apps exist, present the list to the user and ask which one to use."
     ),
 )
 

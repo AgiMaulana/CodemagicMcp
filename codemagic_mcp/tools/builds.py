@@ -8,14 +8,26 @@ from codemagic_mcp.client import CodemagicClient
 
 def register(mcp: FastMCP) -> None:
     @mcp.tool()
-    async def list_builds(app_id: str | None = None) -> Any:
-        """List Codemagic builds, optionally filtered by app.
+    async def list_builds(
+        app_id: str | None = None,
+        branch: str | None = None,
+        tag: str | None = None,
+        limit: int = 10,
+        page: int = 1,
+    ) -> Any:
+        """List Codemagic builds, optionally filtered by app, branch, and/or tag.
 
         Args:
             app_id: Optional app ID to filter builds. If omitted, returns builds across all apps.
+            branch: Optional branch name to filter builds (e.g. "main").
+            tag: Optional tag name to filter builds (e.g. "release_v5.57.2").
+            limit: Number of builds per page (default 10).
+            page: Page number to retrieve, starting from 1 (default 1).
         """
         async with CodemagicClient() as client:
-            return await client.list_builds(app_id=app_id)
+            return await client.list_builds(
+                app_id=app_id, branch=branch, tag=tag, limit=limit, page=page
+            )
 
     @mcp.tool()
     async def get_build(build_id: str) -> Any:
