@@ -22,6 +22,20 @@ A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://do
 
 **Requirements:** Python 3.11+
 
+### Option 1 — pip (recommended)
+
+```bash
+pip install codemagic-mcp
+```
+
+### Option 2 — uvx (no install needed)
+
+```bash
+uvx codemagic-mcp
+```
+
+### Option 3 — from source
+
 ```bash
 git clone https://github.com/AgiMaulana/CodemagicMcp.git
 cd CodemagicMcp
@@ -31,30 +45,80 @@ python3 -m venv .venv
 
 ## Configuration
 
-```bash
-cp .env.example .env
-# Edit .env and set your CODEMAGIC_API_KEY
-```
-
 Get your API token from [Codemagic User Settings → Integrations → Codemagic API](https://codemagic.io/settings).
+
+You can provide it as an environment variable or via a `.env` file:
+
+```bash
+# .env
+CODEMAGIC_API_KEY=your-api-key-here
+```
 
 ## Register with Claude Code
 
-Add to `~/.claude.json`:
+Run the following command to add the server:
+
+```bash
+claude mcp add codemagic -- codemagic-mcp
+```
+
+Then set your API key in the MCP env config, or export it in your shell before starting Claude Code:
+
+```bash
+export CODEMAGIC_API_KEY=your-api-key-here
+```
+
+Alternatively, add it manually to `~/.claude.json`:
 
 ```json
 {
   "mcpServers": {
     "codemagic": {
-      "command": "/path/to/CodemagicMcp/.venv/bin/python",
-      "args": ["-m", "codemagic_mcp"],
-      "cwd": "/path/to/CodemagicMcp"
+      "command": "codemagic-mcp",
+      "env": {
+        "CODEMAGIC_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### Using uvx (no prior installation needed)
+
+```json
+{
+  "mcpServers": {
+    "codemagic": {
+      "command": "uvx",
+      "args": ["codemagic-mcp"],
+      "env": {
+        "CODEMAGIC_API_KEY": "your-api-key-here"
+      }
     }
   }
 }
 ```
 
 Restart Claude Code — the tools will appear in `/tools`.
+
+## Register with Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "codemagic": {
+      "command": "codemagic-mcp",
+      "env": {
+        "CODEMAGIC_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop to pick up the changes.
 
 ## Project Structure
 
