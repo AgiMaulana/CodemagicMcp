@@ -79,14 +79,34 @@ def register(mcp: FastMCP) -> None:
             return await client.cancel_build(build_id)
 
     @mcp.tool()
-    async def get_build_logs(build_id: str) -> Any:
-        """Get the logs for a Codemagic build.
+    async def get_build_logs(
+        build_id: str,
+        statuses: list[str] | None = None,
+    ) -> Any:
+        """Get a step-by-step status summary of a Codemagic build.
+
+        Returns each build step with its name, ID, and status (✅ success, ❌ failed, ⏭ skipped).
 
         Args:
             build_id: The Codemagic build ID.
+            statuses: Optional list of statuses to filter by. Valid values: "success", "failed", "skipped", "canceled".
+                      If omitted, all steps are returned.
         """
         async with CodemagicClient() as client:
-            return await client.get_build_logs(build_id)
+            return await client.get_build_logs(build_id, statuses=statuses)
+
+    @mcp.tool()
+    async def get_step_logs(build_id: str, step_id: str) -> Any:
+        """Get the raw logs for a specific build step.
+
+        Use get_build_logs first to see all step IDs, then call this to drill into a specific step.
+
+        Args:
+            build_id: The Codemagic build ID.
+            step_id: The step ID (from get_build_logs output).
+        """
+        async with CodemagicClient() as client:
+            return await client.get_step_logs(build_id, step_id)
 
     @mcp.tool()
     async def list_build_artifacts(build_id: str) -> Any:

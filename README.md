@@ -17,10 +17,11 @@ A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://do
 | Tool | Description |
 |------|-------------|
 | `list_builds` | List builds, optionally filtered by app |
-| `get_build` | Get details and status of a specific build |
+| `get_build` | Get trimmed details and step summary of a specific build |
 | `trigger_build` | Trigger a new build for an application |
 | `cancel_build` ⚠️ | Cancel a running build |
-| `get_build_logs` | Get the logs for a build |
+| `get_build_logs` | Get a step-by-step status summary of a build (filterable by status) |
+| `get_step_logs` | Get raw logs for a specific build step by step ID |
 | `list_build_artifacts` | List all artifacts produced by a build |
 
 ### Artifacts

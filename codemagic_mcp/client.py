@@ -122,7 +122,47 @@ class CodemagicClient:
         }
 
     async def get_build(self, build_id: str) -> Any:
-        return await self._get(f"/builds/{build_id}")
+        data = await self._get(f"/builds/{build_id}")
+        app = data.get("application", {})
+        build = data.get("build", {})
+        commit = build.get("commit", {}) or {}
+        pr = build.get("pullRequest")
+        return {
+            "appName": app.get("appName"),
+            "appId": app.get("_id"),
+            "build": {
+                "_id": build.get("_id"),
+                "index": build.get("index"),
+                "status": build.get("status"),
+                "branch": build.get("branch"),
+                "tag": build.get("tag"),
+                "workflow": build.get("fileWorkflowId") or build.get("workflowId"),
+                "instanceType": build.get("instanceType"),
+                "startedAt": build.get("startedAt"),
+                "finishedAt": build.get("finishedAt"),
+                "startedBy": build.get("startedBy"),
+                "message": build.get("message"),
+                "commit": {
+                    "author": commit.get("authorName"),
+                    "message": commit.get("commitMessage"),
+                    "hash": commit.get("hash"),
+                },
+                "pullRequest": {
+                    "number": pr.get("number"),
+                    "sourceBranch": pr.get("sourceBranch"),
+                    "destinationBranch": pr.get("destinationBranch"),
+                    "url": pr.get("url"),
+                } if pr else None,
+                "steps": [
+                    {
+                        "id": action.get("_id"),
+                        "name": action.get("name"),
+                        "status": action.get("status"),
+                    }
+                    for action in build.get("buildActions", [])
+                ],
+            },
+        }
 
     async def trigger_build(
         self,
@@ -150,8 +190,29 @@ class CodemagicClient:
     async def cancel_build(self, build_id: str) -> Any:
         return await self._post(f"/builds/{build_id}/cancel")
 
-    async def get_build_logs(self, build_id: str) -> Any:
-        return await self._get(f"/builds/{build_id}/log")
+    async def get_build_logs(self, build_id: str, statuses: list[str] | None = None) -> str:
+        build_data = await self._get(f"/builds/{build_id}")
+        actions = build_data.get("build", {}).get("buildActions", [])
+        status_emoji = {
+            "success": "✅",
+            "failed": "❌",
+            "skipped": "⏭",
+            "canceled": "🚫",
+        }
+        lines = []
+        for action in actions:
+            status = action.get("status") or "unknown"
+            if statuses and status not in statuses:
+                continue
+            emoji = status_emoji.get(status, "⏳")
+            lines.append(f"{emoji}  {action.get('name')}")
+            lines.append(f"    ID: {action.get('_id')}  status: {status}")
+        return "\n".join(lines)
+
+    async def get_step_logs(self, build_id: str, step_id: str) -> str:
+        response = await self._client.get(f"/builds/{build_id}/step/{step_id}")
+        response.raise_for_status()
+        return response.text
 
     async def list_build_artifacts(self, build_id: str) -> Any:
         build = await self._get(f"/builds/{build_id}")
