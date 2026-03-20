@@ -30,14 +30,19 @@ def register(mcp: FastMCP) -> None:
             )
 
     @mcp.tool()
-    async def get_build(build_id: str) -> Any:
+    async def get_build(build_id: str, include_steps: bool = False) -> Any:
         """Get details and status of a specific Codemagic build.
+
+        Always includes a step summary (total, success, failed, skipped counts).
+        Set include_steps=True to also get the full list of steps with their IDs,
+        which can then be used with get_step_logs.
 
         Args:
             build_id: The Codemagic build ID.
+            include_steps: If True, include full step list with IDs. Default False.
         """
         async with CodemagicClient() as client:
-            return await client.get_build(build_id)
+            return await client.get_build(build_id, include_steps=include_steps)
 
     @mcp.tool()
     async def trigger_build(

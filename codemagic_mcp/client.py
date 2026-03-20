@@ -145,12 +145,32 @@ class CodemagicClient:
             ],
         }
 
-    async def get_build(self, build_id: str) -> Any:
+    async def get_build(self, build_id: str, include_steps: bool = False) -> Any:
         data = await self._get(f"/builds/{build_id}")
         app = data.get("application", {})
         build = data.get("build", {})
         commit = build.get("commit", {}) or {}
         pr = build.get("pullRequest")
+        actions = build.get("buildActions", [])
+
+        from collections import Counter
+        status_counts = Counter(a.get("status") for a in actions)
+        steps: Any = {
+            "total": len(actions),
+            "success": status_counts.get("success", 0),
+            "failed": status_counts.get("failed", 0),
+            "skipped": status_counts.get("skipped", 0),
+        }
+        if include_steps:
+            steps["items"] = [
+                {
+                    "id": a.get("_id"),
+                    "name": a.get("name"),
+                    "status": a.get("status"),
+                }
+                for a in actions
+            ]
+
         return {
             "appName": app.get("appName"),
             "appId": app.get("_id"),
@@ -177,14 +197,7 @@ class CodemagicClient:
                     "destinationBranch": pr.get("destinationBranch"),
                     "url": pr.get("url"),
                 } if pr else None,
-                "steps": [
-                    {
-                        "id": action.get("_id"),
-                        "name": action.get("name"),
-                        "status": action.get("status"),
-                    }
-                    for action in build.get("buildActions", [])
-                ],
+                "steps": steps,
             },
         }
 
