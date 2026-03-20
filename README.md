@@ -17,7 +17,7 @@ A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://do
 | Tool | Description |
 |------|-------------|
 | `list_builds` | List builds, optionally filtered by app |
-| `get_build` | Get trimmed details and step summary of a specific build |
+| `get_build` | Get build details with step count summary; pass `include_steps=True` for full step list |
 | `trigger_build` | Trigger a new build for an application |
 | `cancel_build` ⚠️ | Cancel a running build |
 | `get_build_logs` | Get a step-by-step status summary of a build (filterable by status) |
