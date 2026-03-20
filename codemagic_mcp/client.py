@@ -42,11 +42,35 @@ class CodemagicClient:
 
     # Applications
 
+    def _trim_app(self, app: dict) -> dict:
+        repo = app.get("repository") or {}
+        return {
+            "_id": app.get("_id"),
+            "appName": app.get("appName"),
+            "projectType": app.get("projectType"),
+            "archived": app.get("archived"),
+            "isConfigured": app.get("isConfigured"),
+            "lastBuildId": app.get("lastBuildId"),
+            "createdAt": app.get("createdAt"),
+            "repository": {
+                "url": repo.get("htmlUrl"),
+                "provider": repo.get("provider"),
+                "defaultBranch": repo.get("defaultBranch"),
+                "language": repo.get("language"),
+            },
+        }
+
     async def list_apps(self) -> Any:
-        return await self._get("/apps")
+        data = await self._get("/apps")
+        apps = data.get("applications", data) if isinstance(data, dict) else data
+        if isinstance(apps, list):
+            return [self._trim_app(a) for a in apps]
+        return apps
 
     async def get_app(self, app_id: str) -> Any:
-        return await self._get(f"/apps/{app_id}")
+        data = await self._get(f"/apps/{app_id}")
+        app = data.get("application", data) if isinstance(data, dict) else data
+        return self._trim_app(app)
 
     async def add_app(self, repository_url: str) -> Any:
         return await self._post("/apps", json={"repositoryUrl": repository_url})
@@ -216,7 +240,19 @@ class CodemagicClient:
 
     async def list_build_artifacts(self, build_id: str) -> Any:
         build = await self._get(f"/builds/{build_id}")
-        return build.get("build", {}).get("artefacts", [])
+        artifacts = build.get("build", {}).get("artefacts", [])
+        return [
+            {
+                "name": a.get("name"),
+                "type": a.get("type"),
+                "url": a.get("url"),
+                "size": a.get("size"),
+                "version": a.get("versionName") or a.get("version"),
+                "versionCode": a.get("versionCode"),
+                "minOsVersion": a.get("minOsVersion"),
+            }
+            for a in artifacts
+        ]
 
     # Artifacts
 
