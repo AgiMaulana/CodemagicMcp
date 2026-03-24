@@ -1,6 +1,8 @@
 <!-- mcp-name: io.github.AgiMaulana/CodemagicMcp -->
 # Codemagic MCP Server
 
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-blue)](https://registry.modelcontextprotocol.io/servers/io.github.AgiMaulana/CodemagicMcp)
+
 A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://docs.codemagic.io/rest-api/overview/) as Claude-callable tools. Trigger builds, manage apps, download artifacts, and clear caches — all from Claude Code or Claude Desktop without leaving the chat.
 
 ## Tools
@@ -55,20 +57,35 @@ A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://do
 
 > ⚠️ These tools are marked as destructive and will prompt for confirmation before executing.
 
+## Quick Start
+
+The fastest way to get running with Claude Code — no separate install step needed:
+
+```bash
+# 1. Add the server (uses uvx to run it on-demand)
+claude mcp add codemagic -e CODEMAGIC_API_KEY=your-api-key-here -- uvx codemagic-mcp
+
+# 2. Restart Claude Code — tools will appear in /tools
+```
+
+That's it. See [Configuration](#configuration) for optional settings like `CODEMAGIC_DEFAULT_APP_ID`.
+
+---
+
 ## Installation
 
 **Requirements:** Python 3.11+
 
-### Option 1 — pip (recommended)
-
-```bash
-pip install codemagic-mcp
-```
-
-### Option 2 — uvx (no install needed)
+### Option 1 — uvx (recommended, no install needed)
 
 ```bash
 uvx codemagic-mcp
+```
+
+### Option 2 — pip
+
+```bash
+pip install codemagic-mcp
 ```
 
 ### Option 3 — from source
