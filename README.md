@@ -1,9 +1,10 @@
-<!-- mcp-name: io.github.AgiMaulana/CodemagicMcp -->
 # Codemagic MCP Server
 
 [![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-blue)](https://registry.modelcontextprotocol.io/servers/io.github.AgiMaulana/CodemagicMcp)
 
 A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://docs.codemagic.io/rest-api/overview/) as Claude-callable tools. Trigger builds, manage apps, download artifacts, and clear caches — all from Claude Code or Claude Desktop without leaving the chat.
+
+[![Codemagic MCP server](https://glama.ai/mcp/servers/AgiMaulana/CodemagicMcp/badges/card.svg)](https://glama.ai/mcp/servers/AgiMaulana/CodemagicMcp)
 
 ## Tools
 
