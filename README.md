@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.AgiMaulana/CodemagicMcp -->
 # Codemagic MCP Server
 
 A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://docs.codemagic.io/rest-api/overview/) as Claude-callable tools. Trigger builds, manage apps, download artifacts, and clear caches — all from Claude Code or Claude Desktop without leaving the chat.
