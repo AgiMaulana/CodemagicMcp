@@ -1,3 +1,6 @@
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any
 
 import httpx
@@ -250,6 +253,144 @@ class CodemagicClient:
         response = await self._client.get(f"/builds/{build_id}/step/{step_id}")
         response.raise_for_status()
         return response.text
+
+    def _get_step_log_artifact_id(self, build_id: str, step_id: str) -> str:
+        return f"artifact_{build_id}_{step_id}"
+
+    def _cleanup_expired_log_files(self, now: datetime) -> None:
+        temp_dir = settings.codemagic_log_temp_dir
+        if not temp_dir.exists():
+            return
+
+        ttl_seconds = settings.codemagic_log_ttl_seconds
+        cutoff = now - timedelta(seconds=ttl_seconds)
+        for candidate in temp_dir.glob("*.log"):
+            try:
+                modified_at = datetime.fromtimestamp(candidate.stat().st_mtime, tz=UTC)
+            except FileNotFoundError:
+                continue
+
+            if modified_at < cutoff:
+                try:
+                    candidate.unlink()
+                except FileNotFoundError:
+                    continue
+
+    def _enforce_step_log_limits(self) -> None:
+        temp_dir = settings.codemagic_log_temp_dir
+        if not temp_dir.exists():
+            return
+
+        candidates = []
+        for candidate in temp_dir.glob("*.log"):
+            try:
+                stat = candidate.stat()
+            except FileNotFoundError:
+                continue
+            candidates.append((candidate, stat.st_mtime, stat.st_size))
+
+        total_bytes = sum(size for _, _, size in candidates)
+        max_total_bytes = settings.codemagic_log_max_total_bytes
+        max_file_count = settings.codemagic_log_max_file_count
+
+        if len(candidates) <= max_file_count and total_bytes <= max_total_bytes:
+            return
+
+        candidates.sort(key=lambda item: item[1])
+        file_count = len(candidates)
+        for candidate, _, size in candidates:
+            if file_count <= max_file_count and total_bytes <= max_total_bytes:
+                break
+            try:
+                candidate.unlink()
+            except FileNotFoundError:
+                continue
+            total_bytes -= size
+            file_count -= 1
+
+    def cleanup_step_log_artifacts(self) -> None:
+        now = datetime.now(UTC)
+        self._cleanup_expired_log_files(now)
+        self._enforce_step_log_limits()
+
+    def _build_log_file_path(self, build_id: str, step_id: str) -> Path:
+        temp_dir = settings.codemagic_log_temp_dir
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        return temp_dir / f"build_{build_id}_step_{step_id}.log"
+
+    def _get_expiration_time(self, modified_at: datetime) -> datetime:
+        return modified_at + timedelta(seconds=settings.codemagic_log_ttl_seconds)
+
+    def _build_missing_step_log_artifact_response(
+        self,
+        build_id: str,
+        step_id: str,
+    ) -> dict[str, str]:
+        return {
+            "status": "missing",
+            "artifact_id": self._get_step_log_artifact_id(build_id, step_id),
+            "reason": "not_generated_or_expired",
+            "message": (
+                "The step log artifact was not found. "
+                "It may not have been generated, or it may have expired and been deleted."
+            ),
+        }
+
+    def _write_step_log_file(self, destination: Path, log_text: str) -> None:
+        with NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=destination.parent,
+            prefix=f"{destination.stem}_",
+            suffix=".tmp",
+            delete=False,
+        ) as temp_file:
+            temp_file.write(log_text)
+            temp_path = Path(temp_file.name)
+
+        temp_path.replace(destination)
+
+    def _inspect_step_log_artifact(self, build_id: str, step_id: str) -> dict[str, Any]:
+        destination = self._build_log_file_path(build_id, step_id)
+        if not destination.exists():
+            return self._build_missing_step_log_artifact_response(build_id, step_id)
+
+        try:
+            modified_at = datetime.fromtimestamp(destination.stat().st_mtime, tz=UTC)
+        except FileNotFoundError:
+            return self._build_missing_step_log_artifact_response(build_id, step_id)
+
+        expires_at = self._get_expiration_time(modified_at)
+        if expires_at <= datetime.now(UTC):
+            try:
+                destination.unlink()
+            except FileNotFoundError:
+                pass
+            return self._build_missing_step_log_artifact_response(build_id, step_id)
+
+        with destination.open("r", encoding="utf-8") as log_file:
+            line_count = sum(1 for _ in log_file)
+
+        return {
+            "status": "available",
+            "artifact_id": self._get_step_log_artifact_id(build_id, step_id),
+            "file_path": str(destination),
+            "bytes": destination.stat().st_size,
+            "line_count": line_count,
+            "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
+        }
+
+    async def get_step_logs_file(self, build_id: str, step_id: str) -> dict[str, Any]:
+        log_text = await self.get_step_logs(build_id, step_id)
+        self.cleanup_step_log_artifacts()
+
+        destination = self._build_log_file_path(build_id, step_id)
+        self._write_step_log_file(destination, log_text)
+        self._enforce_step_log_limits()
+        return self._inspect_step_log_artifact(build_id, step_id)
+
+    def get_step_log_artifact(self, build_id: str, step_id: str) -> dict[str, Any]:
+        return self._inspect_step_log_artifact(build_id, step_id)
 
     async def list_build_artifacts(self, build_id: str) -> Any:
         build = await self._get(f"/builds/{build_id}")

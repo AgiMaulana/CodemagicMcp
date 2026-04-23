@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server.fastmcp import FastMCP
 from mcp.types import ToolAnnotations
@@ -101,7 +101,11 @@ def register(mcp: FastMCP) -> None:
             return await client.get_build_logs(build_id, statuses=statuses)
 
     @mcp.tool()
-    async def get_step_logs(build_id: str, step_id: str) -> Any:
+    async def get_step_logs(
+        build_id: str,
+        step_id: str,
+        delivery: Literal["inline", "file"] = "inline",
+    ) -> Any:
         """Get the raw logs for a specific build step.
 
         Use get_build_logs first to see all step IDs, then call this to drill into a specific step.
@@ -109,9 +113,32 @@ def register(mcp: FastMCP) -> None:
         Args:
             build_id: The Codemagic build ID.
             step_id: The step ID (from get_build_logs output).
+            delivery: "inline" to return log text directly, or "file" to create/update a managed temp file and return artifact metadata.
         """
         async with CodemagicClient() as client:
-            return await client.get_step_logs(build_id, step_id)
+            if delivery == "inline":
+                return await client.get_step_logs(build_id, step_id)
+            if delivery == "file":
+                return await client.get_step_logs_file(build_id, step_id)
+            raise ValueError('delivery must be either "inline" or "file"')
+
+    @mcp.tool()
+    async def get_step_log_artifact(build_id: str, step_id: str) -> Any:
+        """Check whether a managed step log artifact exists for a build step.
+
+        This tool only inspects the local managed artifact created by
+        get_step_logs(..., delivery="file"). It does not fetch from Codemagic,
+        recreate missing files, or return log contents inline.
+
+        The returned artifact metadata includes a deterministic artifact_id:
+        artifact_<build_id>_<step_id>
+
+        Args:
+            build_id: The Codemagic build ID.
+            step_id: The step ID (from get_build_logs output).
+        """
+        async with CodemagicClient() as client:
+            return client.get_step_log_artifact(build_id, step_id)
 
     @mcp.tool()
     async def list_build_artifacts(build_id: str) -> Any:

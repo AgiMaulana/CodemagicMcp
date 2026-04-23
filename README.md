@@ -29,7 +29,8 @@ A local Python MCP server that exposes the [Codemagic CI/CD REST API](https://do
 | `trigger_build` | Trigger a new build for an application |
 | `cancel_build` ⚠️ | Cancel a running build |
 | `get_build_logs` | Get a step-by-step status summary of a build (filterable by status) |
-| `get_step_logs` | Get raw logs for a specific build step by step ID |
+| `get_step_logs` | Get raw logs inline or create/update a managed temp file for a specific build step |
+| `get_step_log_artifact` | Check whether a managed local step-log artifact still exists for a specific build step |
 | `list_build_artifacts` | List all artifacts produced by a build |
 
 ### Artifacts
@@ -114,6 +115,13 @@ CODEMAGIC_API_KEY=your-api-key-here
 
 # Optional: set a default app so you don't have to specify it every time
 CODEMAGIC_DEFAULT_APP_ID=your-app-id-here
+
+# Optional: customize managed temp log storage for get_step_logs(..., delivery="file")
+CODEMAGIC_LOG_TEMP_DIR=/tmp/codemagic-mcp
+CODEMAGIC_LOG_TTL_SECONDS=3600
+CODEMAGIC_LOG_CLEANUP_INTERVAL_SECONDS=300
+CODEMAGIC_LOG_MAX_TOTAL_BYTES=524288000
+CODEMAGIC_LOG_MAX_FILE_COUNT=200
 ```
 
 ### Default App ID
@@ -123,6 +131,25 @@ CODEMAGIC_DEFAULT_APP_ID=your-app-id-here
 1. Call `list_apps` to discover available apps.
 2. Use the app automatically if only one exists.
 3. Present the list and ask you to choose if multiple apps are found.
+
+### Step Log File Delivery
+
+`get_step_logs` supports two delivery modes:
+
+- `delivery="inline"` returns the raw step log text directly.
+- `delivery="file"` writes the log to a managed local temp file and returns metadata such as `artifact_id`, `file_path`, `bytes`, `line_count`, and `expires_at`.
+
+The local file mode is useful when a step log is too large to comfortably return inline. Managed log files are stored under `CODEMAGIC_LOG_TEMP_DIR` and expired files are cleaned up opportunistically whenever a new log file is written. The default retention window is controlled by `CODEMAGIC_LOG_TTL_SECONDS` and defaults to `3600` seconds.
+
+The server also runs a startup cleanup pass and a periodic background cleanup loop. The loop interval is controlled by `CODEMAGIC_LOG_CLEANUP_INTERVAL_SECONDS` and defaults to `300` seconds. As an additional safety backstop, the managed temp directory is capped by `CODEMAGIC_LOG_MAX_TOTAL_BYTES` and `CODEMAGIC_LOG_MAX_FILE_COUNT`; when either cap is exceeded, the oldest files are evicted first.
+
+`get_step_log_artifact(build_id, step_id)` checks whether that managed artifact still exists without calling Codemagic again or returning the file contents. The artifact metadata includes a deterministic `artifact_id` in this format:
+
+```text
+artifact_<build_id>_<step_id>
+```
+
+If the artifact is missing, the server returns `status="missing"` with reason `not_generated_or_expired`, which means the file was either never generated or it expired and was deleted.
 
 ## Register with Claude Code
 
