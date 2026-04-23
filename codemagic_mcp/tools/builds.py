@@ -104,7 +104,7 @@ def register(mcp: FastMCP) -> None:
     async def get_step_logs(
         build_id: str,
         step_id: str,
-        delivery: Literal["inline", "file"] = "inline",
+        delivery: Literal["inline", "file"] = "file",
     ) -> Any:
         """Get the raw logs for a specific build step.
 
@@ -113,7 +113,7 @@ def register(mcp: FastMCP) -> None:
         Args:
             build_id: The Codemagic build ID.
             step_id: The step ID (from get_build_logs output).
-            delivery: "inline" to return log text directly, or "file" to create/update a managed temp file and return artifact metadata.
+            delivery: Defaults to "file" to create/update a managed temp file and return artifact metadata. Use "inline" to return log text directly.
         """
         async with CodemagicClient() as client:
             if delivery == "inline":

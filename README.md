@@ -136,8 +136,8 @@ CODEMAGIC_LOG_MAX_FILE_COUNT=200
 
 `get_step_logs` supports two delivery modes:
 
+- `delivery="file"` is the default and writes the log to a managed local temp file, returning metadata such as `artifact_id`, `file_path`, `bytes`, `line_count`, and `expires_at`.
 - `delivery="inline"` returns the raw step log text directly.
-- `delivery="file"` writes the log to a managed local temp file and returns metadata such as `artifact_id`, `file_path`, `bytes`, `line_count`, and `expires_at`.
 
 The local file mode is useful when a step log is too large to comfortably return inline. Managed log files are stored under `CODEMAGIC_LOG_TEMP_DIR` and expired files are cleaned up opportunistically whenever a new log file is written. The default retention window is controlled by `CODEMAGIC_LOG_TTL_SECONDS` and defaults to `3600` seconds.
 
